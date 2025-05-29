@@ -1,0 +1,7 @@
+.uvenv/
+__pycache__/
+
+other/
+
+models/
+
