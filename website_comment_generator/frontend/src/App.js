@@ -7,7 +7,7 @@ function GenerationTypeDropdown() {
 
   const handleOptionClick = (option) => {
     if (option === "Reply") {
-      alert("It is too expensive for me =(");
+      alert("Not available yet");
       return;
     }
     setGenerationType(option);
@@ -59,15 +59,15 @@ function GenerationTypeDropdown() {
 
 function App() {
   // Generation parameters
-  const [temperature, setTemperature] = useState(0.7);
-  const [maxNewTokens, setMaxNewTokens] = useState(30);
+  const [temperature, setTemperature] = useState(0.3);
+  const [maxNewTokens, setMaxNewTokens] = useState(128);
   const [numReturnSequences, setNumReturnSequences] = useState(1);
   const [topP, setTopP] = useState(1.0);
   const [topK, setTopK] = useState(50);
 
   // Input things
   const [postText, setPostText] = useState("");
-  const [commentPosition, setCommentPosition] = useState(0);
+  const [commentPosition, setCommentPosition] = useState(1);
   const [postReactions, setPostReactions] = useState({
     "👍": 0,
     "👎": 0,
@@ -104,7 +104,7 @@ function App() {
     "💩": 0,
   });
   const [showDesiredReactions, setShowDesiredReactions] = useState(false);
-  const [notification, setNotification] = useState("");
+  const [notification, setNotification] = useState(null);
 
   // Output
   const [output, setOutput] = useState(""); // Add this state for output
@@ -129,7 +129,7 @@ function App() {
   // Input functions
   const handlePostTextChange = (e) => {
     setPostText(e.target.value);
-    setNotification(""); // Clear notification when user types
+    setNotification(null); // Clear notification when user types
   };
   const handleCommentPositionChange = (e) => {
     const value = parseInt(e.target.value);
@@ -160,14 +160,14 @@ function App() {
     e.preventDefault();
   
     if (!postText.trim()) {
-      setNotification("Please write something in the text field before submitting.");
+      setNotification({message:"Please write something in the text field before submitting", type:"error"});
       return;
     }
   
-    setNotification("Generating...");
+    setNotification({message:"Generating...", type:"success"});
   
     try {
-      const response = await fetch("http://localhost:8000/generate", {
+      const response = await fetch("https://mccarryster-tg-comment-generator.hf.space/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -175,7 +175,7 @@ function App() {
         body: JSON.stringify({
           generation_params: {
             temperature: temperature,
-            no_repeat_ngram_size: maxNewTokens,
+            max_new_tokens: maxNewTokens,
             num_return_sequences: numReturnSequences,
             top_p: topP,
             top_k: topK,
@@ -192,10 +192,9 @@ function App() {
       if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
       setOutput(Array.isArray(data.output) ? data.output : [data.output]);
-      // setOutput(data.output);
-      setNotification("");
+      setNotification(null);
     } catch (error) {
-      setNotification("Error generating comment: " + error.message);
+      setNotification({message:"Error generating comment: "+error.message, type:"error"});
     }
   };
 
@@ -229,8 +228,8 @@ function App() {
             <div className="slider-container">
               <input
                 type="range"
-                min="20"
-                max="200"
+                min="100"
+                max="500"
                 step="5"
                 value={maxNewTokens}
                 onChange={handleMaxNewTokensChange}
@@ -360,7 +359,7 @@ function App() {
               ))}
             </div>
           )}
-          {notification && <div className="notification">{notification}</div>}
+          {notification && (<div className={`notification ${notification.type}`}>{notification.message}</div>)}
           <button
             className="submit-button"
             onClick={handleSubmit}
@@ -370,11 +369,26 @@ function App() {
           </button>
         </section>
 
-        <section className="output-section">
+        {/* <section className="output-section">
           <h2>Output</h2>
-          {/* <div className="output-placeholder">
-            {output ? output : "Generated comment will be here"}
-          </div> */}
+          <div className="output-list">
+            {output.length > 0 ? (
+              output.map((comment, index) => (
+                <div key={`comment-${index}`} className="comment-item">
+                  <div className="comment-header">Option {index + 1}</div>
+                  <div className="comment-content">{comment}</div>
+                </div>
+              ))
+            ) : (
+              <div className="output-placeholder">Generated comments will appear here</div>
+            )}
+          </div>
+        </section> */}
+        <section className="output-section">
+          <div className="output-header">
+            <h2>Output</h2>
+            <span className="disclaimer">LLM can generate comments that are offensive, racist, or politically biased</span>
+          </div>
           <div className="output-list">
             {output.length > 0 ? (
               output.map((comment, index) => (

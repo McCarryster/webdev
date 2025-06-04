@@ -1,20 +1,22 @@
-# Use official Node.js LTS Alpine image
-FROM node:18-alpine
+# Stage 1: Build the React app
+FROM node:18-alpine AS build
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy all project files to container
 COPY . .
+RUN npm run build
 
-# Expose React default port
-EXPOSE 3000
+# Stage 2: Serve the React app with a lightweight web server
+FROM nginx:alpine
 
-# Start React app in development mode
-CMD ["npm", "start"]
+# Copy the build output to nginx's html directory
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose port 80 (default for nginx)
+EXPOSE 80
+
+# Start nginx server
+CMD ["nginx", "-g", "daemon off;"]

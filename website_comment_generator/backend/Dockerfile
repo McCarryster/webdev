@@ -16,14 +16,22 @@ RUN pip install torchvision --extra-index-url https://download.pytorch.org/whl/c
 # Install transformers library
 RUN pip install transformers --upgrade
 
-# Copy application code
-COPY main.py .
+# Set up a new user named "user"
+RUN useradd -m -u 1000 user
+# Switch to the "user" user
+USER user
+# Set home to the user's home directory
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH
 
-# Copy the model
-COPY models/fine_tuned_vikhr_llama3.2_1B/ ./model/
+# Set the working directory to the      user's home directory
+WORKDIR $HOME/app
 
-# Expose port 8000 for FastAPI
-EXPOSE 8000
+# Copy application code and the model
+COPY --chown=user main.py $HOME/app
+# COPY --chown=user fine_tuned_vikhr_llama3.2_1B/ $HOME/app/model/
+
+# Expose port
+EXPOSE 7860
 
 # Run the FastAPI app with Uvicorn on all interfaces
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
